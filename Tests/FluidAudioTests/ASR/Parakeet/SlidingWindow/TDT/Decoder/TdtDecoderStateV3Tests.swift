@@ -349,6 +349,37 @@ final class TdtDecoderStateV3Tests: XCTestCase {
         }
     }
 
+    // MARK: - resetData Tests
+
+    func testResetDataToZeroClearsEveryElement() throws {
+        // The cached audio array's shape, an ANE-aligned array whose inner
+        // dimension is padded to a tile boundary, and an integer array.
+        let arrays = [
+            try ANEMemoryUtils.createAlignedArray(
+                shape: [1, NSNumber(value: ASRConstants.maxModelSamples)], dataType: .float32),
+            try ANEMemoryUtils.createAlignedArray(shape: [2, 3, 5], dataType: .float32),
+            try MLMultiArray(shape: [2, 1, 7], dataType: .float32),
+            try MLMultiArray(shape: [4], dataType: .int32),
+        ]
+        for array in arrays {
+            for i in 0..<array.count {
+                array[i] = NSNumber(value: i + 1)
+            }
+            array.resetData(to: 0)
+            for i in 0..<array.count {
+                XCTAssertEqual(array[i].doubleValue, 0, "element \(i) of shape \(array.shape)")
+            }
+        }
+    }
+
+    func testResetDataToANonZeroValueSetsEveryElement() throws {
+        let array = try MLMultiArray(shape: [2, 1, 7], dataType: .float32)
+        array.resetData(to: 3)
+        for i in 0..<array.count {
+            XCTAssertEqual(array[i].floatValue, 3)
+        }
+    }
+
     private func fillArrayWithTestData(_ array: MLMultiArray, multiplier: Float) {
         for i in 0..<array.count {
             array[i] = NSNumber(value: Float(i) * multiplier)
